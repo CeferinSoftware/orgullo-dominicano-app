@@ -31,53 +31,85 @@ workflows:
         script: |
           flutter packages pub get
       
-      - name: Generate app icons
+      - name: Remove alpha from source icon BEFORE generating icons
+        script: |
+          echo "=== Removing alpha channel from SOURCE icon ==="
+          pip3 install Pillow
+          
+          python3 << 'EOF'
+          from PIL import Image
+          
+          # Process the source icon FIRST
+          source_icon = "assets/JvomKnnYTSKQZP1NvGZT_do.png"
+          print(f"Processing source icon: {source_icon}")
+          
+          img = Image.open(source_icon)
+          print(f"  Original mode: {img.mode}")
+          
+          if img.mode in ('RGBA', 'LA', 'P'):
+              # Create white background
+              background = Image.new('RGB', img.size, (255, 255, 255))
+              
+              if img.mode == 'P':
+                  img = img.convert('RGBA')
+              
+              if img.mode in ('RGBA', 'LA'):
+                  # Split and use alpha as mask
+                  if img.mode == 'RGBA':
+                      r, g, b, a = img.split()
+                      background.paste(img, mask=a)
+                  else:
+                      l, a = img.split()
+                      background.paste(img.convert('RGB'), mask=a)
+              else:
+                  background.paste(img)
+              
+              background.save(source_icon, 'PNG')
+              print(f"  Done: Saved as RGB (no alpha)")
+          else:
+              print(f"  Already RGB, no changes needed")
+          
+          # Verify
+          img_check = Image.open(source_icon)
+          print(f"  Final mode: {img_check.mode}")
+          EOF
+      
+      - name: Generate app icons (from alpha-free source)
         script: |
           dart run flutter_launcher_icons
       
-      - name: Remove alpha channel from iOS icons
+      - name: Verify iOS icons have no alpha
         script: |
-          echo "=== Removing alpha channel from iOS app icons ==="
-          
-          # Install Pillow for Python image processing
-          pip3 install Pillow
-          
-          # Python script to remove alpha channel
+          echo "=== Verifying iOS icons ==="
           python3 << 'EOF'
           import os
           from PIL import Image
           
           icons_path = "ios/Runner/Assets.xcassets/AppIcon.appiconset"
+          has_alpha = False
           
           for filename in os.listdir(icons_path):
               if filename.endswith('.png'):
                   filepath = os.path.join(icons_path, filename)
-                  print(f"Processing: {filepath}")
-                  
-                  # Open image
                   img = Image.open(filepath)
-                  
-                  # If image has alpha channel, remove it
-                  if img.mode in ('RGBA', 'LA') or (img.mode == 'P' and 'transparency' in img.info):
-                      # Create white background
+                  if img.mode in ('RGBA', 'LA', 'P'):
+                      print(f"WARNING: {filename} still has alpha! Mode: {img.mode}")
+                      # Fix it
                       background = Image.new('RGB', img.size, (255, 255, 255))
-                      
-                      # Paste image on white background
                       if img.mode == 'P':
                           img = img.convert('RGBA')
-                      
                       if img.mode == 'RGBA':
-                          background.paste(img, mask=img.split()[3])  # Use alpha as mask
+                          background.paste(img, mask=img.split()[3])
                       else:
                           background.paste(img)
-                      
-                      # Save without alpha
                       background.save(filepath, 'PNG')
-                      print(f"  Done: Alpha removed from {filename}")
+                      print(f"  Fixed: {filename}")
+                      has_alpha = True
                   else:
-                      print(f"  Skipped: {filename} has no alpha channel")
+                      print(f"OK: {filename} - Mode: {img.mode}")
           
-          print("=== All icons processed! ===")
+          if not has_alpha:
+              print("=== All icons verified: No alpha channel ===")
           EOF
       
       - name: Install CocoaPods dependencies
@@ -137,18 +169,54 @@ workflows:
         script: |
           flutter packages pub get
       
-      - name: Generate app icons
+      - name: Remove alpha from source icon BEFORE generating icons
+        script: |
+          echo "=== Removing alpha channel from SOURCE icon ==="
+          pip3 install Pillow
+          
+          python3 << 'EOF'
+          from PIL import Image
+          
+          # Process the source icon FIRST
+          source_icon = "assets/JvomKnnYTSKQZP1NvGZT_do.png"
+          print(f"Processing source icon: {source_icon}")
+          
+          img = Image.open(source_icon)
+          print(f"  Original mode: {img.mode}")
+          
+          if img.mode in ('RGBA', 'LA', 'P'):
+              # Create white background
+              background = Image.new('RGB', img.size, (255, 255, 255))
+              
+              if img.mode == 'P':
+                  img = img.convert('RGBA')
+              
+              if img.mode in ('RGBA', 'LA'):
+                  if img.mode == 'RGBA':
+                      r, g, b, a = img.split()
+                      background.paste(img, mask=a)
+                  else:
+                      l, a = img.split()
+                      background.paste(img.convert('RGB'), mask=a)
+              else:
+                  background.paste(img)
+              
+              background.save(source_icon, 'PNG')
+              print(f"  Done: Saved as RGB (no alpha)")
+          else:
+              print(f"  Already RGB, no changes needed")
+          
+          img_check = Image.open(source_icon)
+          print(f"  Final mode: {img_check.mode}")
+          EOF
+      
+      - name: Generate app icons (from alpha-free source)
         script: |
           dart run flutter_launcher_icons
       
-      - name: Remove alpha channel from iOS icons
+      - name: Verify iOS icons have no alpha
         script: |
-          echo "=== Removing alpha channel from iOS app icons ==="
-          
-          # Install Pillow for Python image processing
-          pip3 install Pillow
-          
-          # Python script to remove alpha channel
+          echo "=== Verifying iOS icons ==="
           python3 << 'EOF'
           import os
           from PIL import Image
@@ -158,32 +226,22 @@ workflows:
           for filename in os.listdir(icons_path):
               if filename.endswith('.png'):
                   filepath = os.path.join(icons_path, filename)
-                  print(f"Processing: {filepath}")
-                  
-                  # Open image
                   img = Image.open(filepath)
-                  
-                  # If image has alpha channel, remove it
-                  if img.mode in ('RGBA', 'LA') or (img.mode == 'P' and 'transparency' in img.info):
-                      # Create white background
+                  if img.mode in ('RGBA', 'LA', 'P'):
+                      print(f"WARNING: {filename} still has alpha! Mode: {img.mode}")
                       background = Image.new('RGB', img.size, (255, 255, 255))
-                      
-                      # Paste image on white background
                       if img.mode == 'P':
                           img = img.convert('RGBA')
-                      
                       if img.mode == 'RGBA':
-                          background.paste(img, mask=img.split()[3])  # Use alpha as mask
+                          background.paste(img, mask=img.split()[3])
                       else:
                           background.paste(img)
-                      
-                      # Save without alpha
                       background.save(filepath, 'PNG')
-                      print(f"  Done: Alpha removed from {filename}")
+                      print(f"  Fixed: {filename}")
                   else:
-                      print(f"  Skipped: {filename} has no alpha channel")
+                      print(f"OK: {filename} - Mode: {img.mode}")
           
-          print("=== All icons processed! ===")
+          print("=== All icons verified ===")
           EOF
       
       - name: Install CocoaPods dependencies
