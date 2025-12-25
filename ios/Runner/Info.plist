@@ -73,6 +73,17 @@
 	<string>Esta aplicación puede necesitar acceso al micrófono para funciones dentro del contenido web.</string>
 	<key>NSPhotoLibraryUsageDescription</key>
 	<string>Esta aplicación puede necesitar acceso a la galería de fotos para subir imágenes.</string>
+	<!-- Google Mobile Ads App ID (requerido para que la app no crashee) -->
+	<key>GADApplicationIdentifier</key>
+	<string>ca-app-pub-3940256099942544~1458002511</string>
+	<!-- SKAdNetwork para atribución de anuncios iOS -->
+	<key>SKAdNetworkItems</key>
+	<array>
+		<dict>
+			<key>SKAdNetworkIdentifier</key>
+			<string>cstr6suwn9.skadnetwork</string>
+		</dict>
+	</array>
 	<!-- Idioma principal -->
 	<key>CFBundleLocalizations</key>
 	<array>
