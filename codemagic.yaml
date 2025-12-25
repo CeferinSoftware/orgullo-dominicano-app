@@ -31,6 +31,10 @@ workflows:
         script: |
           flutter packages pub get
       
+      - name: Generate app icons (removes transparency for iOS)
+        script: |
+          dart run flutter_launcher_icons
+      
       - name: Install CocoaPods dependencies
         script: |
           cd ios && pod install
@@ -87,6 +91,10 @@ workflows:
       - name: Get Flutter packages
         script: |
           flutter packages pub get
+      
+      - name: Generate app icons (removes transparency for iOS)
+        script: |
+          dart run flutter_launcher_icons
       
       - name: Install CocoaPods dependencies
         script: |
