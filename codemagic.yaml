@@ -35,38 +35,50 @@ workflows:
         script: |
           dart run flutter_launcher_icons
       
-      - name: Remove alpha channel from iOS icons (using native macOS tools)
+      - name: Remove alpha channel from iOS icons
         script: |
           echo "=== Removing alpha channel from iOS app icons ==="
-          ICONS_PATH="ios/Runner/Assets.xcassets/AppIcon.appiconset"
           
-          # Install imagemagick via brew if not available
-          if ! command -v magick &> /dev/null; then
-            echo "Installing ImageMagick..."
-            brew install imagemagick
-          fi
+          # Install Pillow for Python image processing
+          pip3 install Pillow
           
-          for icon in "$ICONS_PATH"/*.png; do
-            if [ -f "$icon" ]; then
-              echo "Processing: $icon"
-              # Get dimensions
-              WIDTH=$(sips -g pixelWidth "$icon" | tail -1 | awk '{print $2}')
-              HEIGHT=$(sips -g pixelHeight "$icon" | tail -1 | awk '{print $2}')
-              echo "  Dimensions: ${WIDTH}x${HEIGHT}"
-              
-              # Create a white background image and composite
-              TEMP_BG="/tmp/white_bg_${WIDTH}x${HEIGHT}.png"
-              TEMP_OUT="/tmp/output_icon.png"
-              
-              # Use magick (ImageMagick 7) to flatten with white background
-              magick "$icon" -background white -flatten -alpha off "$TEMP_OUT"
-              
-              # Replace original
-              mv "$TEMP_OUT" "$icon"
-              echo "  Done: Alpha removed"
-            fi
-          done
-          echo "=== All icons processed! ==="
+          # Python script to remove alpha channel
+          python3 << 'EOF'
+          import os
+          from PIL import Image
+          
+          icons_path = "ios/Runner/Assets.xcassets/AppIcon.appiconset"
+          
+          for filename in os.listdir(icons_path):
+              if filename.endswith('.png'):
+                  filepath = os.path.join(icons_path, filename)
+                  print(f"Processing: {filepath}")
+                  
+                  # Open image
+                  img = Image.open(filepath)
+                  
+                  # If image has alpha channel, remove it
+                  if img.mode in ('RGBA', 'LA') or (img.mode == 'P' and 'transparency' in img.info):
+                      # Create white background
+                      background = Image.new('RGB', img.size, (255, 255, 255))
+                      
+                      # Paste image on white background
+                      if img.mode == 'P':
+                          img = img.convert('RGBA')
+                      
+                      if img.mode == 'RGBA':
+                          background.paste(img, mask=img.split()[3])  # Use alpha as mask
+                      else:
+                          background.paste(img)
+                      
+                      # Save without alpha
+                      background.save(filepath, 'PNG')
+                      print(f"  Done: Alpha removed from {filename}")
+                  else:
+                      print(f"  Skipped: {filename} has no alpha channel")
+          
+          print("=== All icons processed! ===")
+          EOF
       
       - name: Install CocoaPods dependencies
         script: |
@@ -129,37 +141,50 @@ workflows:
         script: |
           dart run flutter_launcher_icons
       
-      - name: Remove alpha channel from iOS icons (using native macOS tools)
+      - name: Remove alpha channel from iOS icons
         script: |
           echo "=== Removing alpha channel from iOS app icons ==="
-          ICONS_PATH="ios/Runner/Assets.xcassets/AppIcon.appiconset"
           
-          # Install imagemagick via brew if not available
-          if ! command -v magick &> /dev/null; then
-            echo "Installing ImageMagick..."
-            brew install imagemagick
-          fi
+          # Install Pillow for Python image processing
+          pip3 install Pillow
           
-          for icon in "$ICONS_PATH"/*.png; do
-            if [ -f "$icon" ]; then
-              echo "Processing: $icon"
-              # Get dimensions
-              WIDTH=$(sips -g pixelWidth "$icon" | tail -1 | awk '{print $2}')
-              HEIGHT=$(sips -g pixelHeight "$icon" | tail -1 | awk '{print $2}')
-              echo "  Dimensions: ${WIDTH}x${HEIGHT}"
-              
-              # Create temp output
-              TEMP_OUT="/tmp/output_icon.png"
-              
-              # Use magick (ImageMagick 7) to flatten with white background
-              magick "$icon" -background white -flatten -alpha off "$TEMP_OUT"
-              
-              # Replace original
-              mv "$TEMP_OUT" "$icon"
-              echo "  Done: Alpha removed"
-            fi
-          done
-          echo "=== All icons processed! ==="
+          # Python script to remove alpha channel
+          python3 << 'EOF'
+          import os
+          from PIL import Image
+          
+          icons_path = "ios/Runner/Assets.xcassets/AppIcon.appiconset"
+          
+          for filename in os.listdir(icons_path):
+              if filename.endswith('.png'):
+                  filepath = os.path.join(icons_path, filename)
+                  print(f"Processing: {filepath}")
+                  
+                  # Open image
+                  img = Image.open(filepath)
+                  
+                  # If image has alpha channel, remove it
+                  if img.mode in ('RGBA', 'LA') or (img.mode == 'P' and 'transparency' in img.info):
+                      # Create white background
+                      background = Image.new('RGB', img.size, (255, 255, 255))
+                      
+                      # Paste image on white background
+                      if img.mode == 'P':
+                          img = img.convert('RGBA')
+                      
+                      if img.mode == 'RGBA':
+                          background.paste(img, mask=img.split()[3])  # Use alpha as mask
+                      else:
+                          background.paste(img)
+                      
+                      # Save without alpha
+                      background.save(filepath, 'PNG')
+                      print(f"  Done: Alpha removed from {filename}")
+                  else:
+                      print(f"  Skipped: {filename} has no alpha channel")
+          
+          print("=== All icons processed! ===")
+          EOF
       
       - name: Install CocoaPods dependencies
         script: |
